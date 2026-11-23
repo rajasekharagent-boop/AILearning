@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q3: Career Advisor AI</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono&display=swap">
+  <!-- Marked.js — converts Claude's markdown into readable HTML -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <!-- DOMPurify — sanitizes marked output to prevent XSS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <style>
+    :root {
+      --accent: #EA580C;
+      --bg: #F4F7FB; --surface: #FFFFFF; --fg: #1A202C; --fg-m: #64748B; --border: #E1E7EF;
+      --r: 10px; --sh: 0 2px 10px rgba(0,0,0,.07);
+      --f: 'Inter', system-ui, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0D1117; --surface: #161B27; --fg: #E2E8F0; --fg-m: #8899B4; --border: #2A3450; --sh: 0 2px 10px rgba(0,0,0,.3); color-scheme: dark; }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: var(--f); background: var(--bg); color: var(--fg); margin: 0; min-height: 100vh; }
+    .page { max-width: 1060px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 22px; }
+
+    .mod-header { display: flex; align-items: center; gap: 14px; padding: 20px 24px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--r); box-shadow: var(--sh); }
+    .mod-num { background: var(--accent); color: #fff; font-weight: 700; font-size: 12px; padding: 5px 11px; border-radius: 6px; }
+    .mod-title { font-size: 20px; font-weight: 700; margin: 0; }
+    .mod-sub { font-size: 13px; color: var(--fg-m); margin: 3px 0 0; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
+    @media (max-width: 780px) { .two-col { grid-template-columns: 1fr; } }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; box-shadow: var(--sh); display: flex; flex-direction: column; gap: 15px; }
+    .card-ttl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--accent); }
+
+    .fg { display: flex; flex-direction: column; gap: 6px; }
+    .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 500px) { .fr { grid-template-columns: 1fr; } }
+
+    label { font-size: 12px; font-weight: 500; color: var(--fg-m); }
+    input[type=text], select { width: 100%; padding: 9px 12px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: 14px; font-family: var(--f); outline: none; transition: border-color .15s; }
+    input[type=text]:focus, select:focus { border-color: var(--accent); }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+
+    .btn { padding: 10px 20px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: var(--f); display: inline-flex; align-items: center; gap: 6px; transition: opacity .15s; }
+    .btn:hover { opacity: .88; } .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-p { background: var(--accent); color: #fff; }
+
+    .sp { width: 17px; height: 17px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin .7s linear infinite; display: inline-block; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .row { display: flex; align-items: center; gap: 10px; }
+
+    .note { font-size: 12px; color: var(--fg-m); background: rgba(234,88,12,.07); border: 1px solid rgba(234,88,12,.18); border-radius: 7px; padding: 9px 13px; line-height: 1.5; }
+
+    .resp {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 20px 22px; min-height: 320px; font-size: 14px; color: var(--fg);
+    }
+    .resp.empty { color: var(--fg-m); font-style: italic; }
+
+    .resp h1 { font-size: 18px; font-weight: 700; margin: 0 0 12px; color: var(--accent); border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+    .resp h2 { font-size: 16px; font-weight: 700; margin: 20px 0 10px; color: var(--fg); }
+    .resp h3 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; color: var(--fg); }
+    .resp p { margin: 8px 0; line-height: 1.7; }
+    .resp ul, .resp ol { padding-left: 22px; margin: 8px 0; }
+    .resp li { margin: 5px 0; line-height: 1.65; }
+    .resp li::marker { color: var(--accent); font-weight: 700; }
+    .resp strong { font-weight: 700; color: var(--fg); }
+    .resp em { color: var(--fg-m); }
+    .resp blockquote { border-left: 3px solid var(--accent); padding: 6px 14px; margin: 10px 0; color: var(--fg-m); background: rgba(234,88,12,.04); border-radius: 0 6px 6px 0; }
+    .resp hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+    .resp code { font-family: 'Space Mono', monospace; font-size: 12px; background: rgba(0,0,0,.06); padding: 2px 6px; border-radius: 4px; }
+    @media (prefers-color-scheme: dark) {
+      .resp code { background: rgba(255,255,255,.08); }
+      .resp blockquote { background: rgba(234,88,12,.08); }
+    }
+    .resp h1:not(:first-child), .resp h2:not(:first-child) { margin-top: 24px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="mod-header">
+    <span class="mod-num">Q3</span>
+    <div>
+      <h1 class="mod-title">Career Advisor AI</h1>
+      <p class="mod-sub">Responsible AI &nbsp;·&nbsp; End-to-End Assistant &nbsp;·&nbsp; Unbiased Output &nbsp;·&nbsp; 90-Day Roadmap</p>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-ttl">Your Profile</div>
+      <div class="note">🛡 This advisor is designed to be <strong>unbiased</strong> and <strong>inclusive</strong> — it makes no assumptions based on gender, age, or background.</div>
+      <div class="fg">
+        <label for="skills">Skills *</label>
+        <input type="text" id="skills" maxlength="500" placeholder="e.g. Java, Python, SQL, Android, React">
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label for="exp">Experience Level</label>
+          <select id="exp">
+            <option>0–1 year (Entry level)</option>
+            <option>1–3 years (Junior)</option>
+            <option>3–5 years (Mid level)</option>
+            <option>5–10 years (Senior)</option>
+            <option>10+ years (Principal/Staff)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label for="edu">Education</label>
+          <select id="edu">
+            <option>High School / GED</option>
+            <option>Bachelor's Degree</option>
+            <option>Master's Degree</option>
+            <option>PhD / Doctorate</option>
+            <option>Bootcamp / Certificate</option>
+            <option>Self-taught</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label for="current">Current Role *</label>
+        <input type="text" id="current" maxlength="200" placeholder="e.g. Junior Developer, Student, Career changer">
+      </div>
+      <div class="fg">
+        <label for="goal">Career Goal / Target Role *</label>
+        <input type="text" id="goal" maxlength="200" placeholder="e.g. Senior Android Developer, Data Scientist">
+      </div>
+      <div class="fg">
+        <label for="interests">Interests &amp; Passions *</label>
+        <input type="text" id="interests" maxlength="300" placeholder="e.g. AI/ML, mobile apps, open-source">
+      </div>
+      <div class="row">
+        <button class="btn btn-p" id="gen-btn" onclick="generate()">Generate Career Advice</button>
+        <div class="sp" id="sp" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Career Advice · Recommended Jobs · Skill Gaps · 90-Day Plan</div>
+      <div class="resp empty" id="resp">(fill in your profile and click Generate Career Advice)</div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  PASTE YOUR CLAUDE API KEY BELOW
+// ═══════════════════════════════════════════════════════════
+const API_KEY = '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';
+// ═══════════════════════════════════════════════════════════
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function callClaude(systemPrompt, userMessage) {
+  if (!API_KEY || API_KEY === 'PASTE_YOUR_API_KEY_HERE') {
+    throw new Error('API key not set — open this file and paste your Claude API key into the API_KEY variable at the top of the script.');
+  }
+  const body = { model: 'claude-sonnet-4-6', max_tokens: 2048, messages: [{ role: 'user', content: userMessage }] };
+  if (systemPrompt) body.system = systemPrompt;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e.error && e.error.message) || 'API error ' + res.status); }
+  const data = await res.json();
+  if (!data.content || !data.content.length) throw new Error('Empty response from Claude API');
+  const textBlock = data.content.find(c => c.type === 'text');
+  if (!textBlock) throw new Error('No text block in Claude API response');
+  return textBlock.text;
+}
+
+async function generate() {
+  const skills = document.getElementById('skills').value.trim();
+  const current = document.getElementById('current').value.trim();
+  const goal = document.getElementById('goal').value.trim();
+  const interests = document.getElementById('interests').value.trim();
+  if (!skills || !current || !goal || !interests) { alert('Please fill in all required fields (marked with *)'); return; }
+
+  const btn = document.getElementById('gen-btn');
+  const sp = document.getElementById('sp');
+  const out = document.getElementById('resp');
+  btn.disabled = true; sp.style.display = 'inline-block';
+  out.innerHTML = ''; out.classList.remove('empty');
+
+  const systemPrompt = `You are an expert career coach. Your advice must be:
+• UNBIASED: No assumptions based on gender, age, ethnicity, or background
+• INCLUSIVE: Suitable for diverse learners and career changers
+• PRACTICAL: Actionable, realistic, concrete steps
+• SAFE: Never suggest anything illegal or unethical
+
+Format your response using clear Markdown with these exact section headings:
+
+## 1. Recommended Jobs
+List 3–5 roles as a bullet list. For each role include the job title in bold and a one-line reason why it fits.
+
+## 2. Skill Gaps to Fill
+List the skills to learn as a numbered list, in priority order. For each, explain why it matters.
+
+## 3. 90-Day Action Plan
+Break the plan into three 4-week blocks using bold headings (e.g. **Weeks 1–4:**) and bullet points for milestones.`;
+
+  const userMessage = `My Profile:
+- Current Role: ${current}
+- Skills: ${skills}
+- Experience: ${document.getElementById('exp').value}
+- Education: ${document.getElementById('edu').value}
+- Interests: ${interests}
+- Career Goal: ${goal}`;
+
+  try {
+    const markdown = await callClaude(systemPrompt, userMessage);
+    out.innerHTML = DOMPurify.sanitize(marked.parse(markdown, { breaks: true, gfm: true }));
+  } catch (e) {
+    out.innerHTML = `<p style="color:#DC2626">⚠ ${escHtml(e.message)}</p>`;
+  }
+  btn.disabled = false; sp.style.display = 'none';
+}
+</script>
+</body>
+</html>
