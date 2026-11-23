@@ -160,7 +160,7 @@ async function callClaude(systemPrompt, userMessage) {
   if (!API_KEY || API_KEY === 'PASTE_YOUR_API_KEY_HERE') {
     throw new Error('API key not set — open this file and paste your Claude API key into the API_KEY variable at the top of the script.');
   }
-  const body = { model: 'claude-sonnet-4-6', max_tokens: 2048, messages: [{ role: 'user', content: userMessage }] };
+  const body = { model: 'claude-sonnet-4-6', max_tokens: 8192, messages: [{ role: 'user', content: userMessage }] };
   if (systemPrompt) body.system = systemPrompt;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
